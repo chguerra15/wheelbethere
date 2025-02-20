@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function() {
           console.log('Loaded JSON Data:', jsonData);
   
           // Extract station info
-          const stations = jsonData.data.stations;
+          let stations = jsonData.data.stations;
           console.log('Stations Array:', stations);
   
           // ✅ Step 3.2: Overlay an SVG for Bluebikes Stations
@@ -69,21 +69,22 @@ document.addEventListener("DOMContentLoaded", function() {
             .style('z-index', '1') // Ensures it appears on top
             .style('pointer-events', 'none'); // Allows map interaction
   
-          // ✅ Use projection to align points correctly
-          const projection = d3.geoMercator()
-            .center([-71.09415, 42.36027])  // Center on Boston
-            .scale(100000)  // Adjust to fit map scale
-            .translate([map.getCanvas().clientWidth / 2, map.getCanvas().clientHeight / 2]);
+          // ✅ Step 3.3: Helper Function to Convert Coordinates
+          function getCoords(station) {
+            const point = new mapboxgl.LngLat(+station.Long, +station.Lat); // Convert to Mapbox format
+            const { x, y } = map.project(point); // Project to pixel coordinates
+            return { cx: x, cy: y };
+          }
   
-          // ✅ Plot station markers as circles
-          svg.selectAll('circle')
+          // ✅ Step 3.3: Append Station Markers as Circles
+          const circles = svg.selectAll('circle')
             .data(stations)
             .enter()
             .append('circle')
-            .attr('cx', d => projection([d.Long, d.Lat])[0])
-            .attr('cy', d => projection([d.Long, d.Lat])[1])
-            .attr('r', 5)
-            .attr('fill', 'red')
+            .attr('r', 5) // Station marker size
+            .attr('fill', 'red') // Marker color
+            .attr('stroke', 'white') // White border
+            .attr('stroke-width', 1)
             .attr('opacity', 0.8)
             .on('mouseover', function(event, d) {
               d3.select(this).attr('r', 8);
@@ -91,6 +92,22 @@ document.addEventListener("DOMContentLoaded", function() {
             .on('mouseout', function(event, d) {
               d3.select(this).attr('r', 5);
             });
+  
+          // ✅ Step 3.3: Function to Update Positions
+          function updatePositions() {
+            circles
+              .attr('cx', d => getCoords(d).cx) // Convert longitude to x-pixel coordinate
+              .attr('cy', d => getCoords(d).cy); // Convert latitude to y-pixel coordinate
+          }
+  
+          // ✅ Initial Positioning
+          updatePositions();
+  
+          // ✅ Keep Station Markers Aligned When Map Moves
+          map.on('move', updatePositions);
+          map.on('zoom', updatePositions);
+          map.on('resize', updatePositions);
+          map.on('moveend', updatePositions);
   
           console.log('Station markers added!');
         })
