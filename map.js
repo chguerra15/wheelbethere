@@ -13,15 +13,10 @@ document.addEventListener("DOMContentLoaded", function() {
     map.on('load', () => {
       console.log('Map loaded!');
   
-      // ✅ Add Bike Lanes (Boston & Cambridge)
+      // ✅ Add Boston Bike Lanes (Cambridge source removed)
       map.addSource('boston_route', {
         type: 'geojson',
         data: 'https://bostonopendata-boston.opendata.arcgis.com/datasets/boston::existing-bike-network-2022.geojson'
-      });
-  
-      map.addSource('cambridge_route', {
-        type: 'geojson',
-        data: 'https://opendata.arcgis.com/datasets/cambridge::bike-lanes.geojson'
       });
   
       map.addLayer({
@@ -30,34 +25,29 @@ document.addEventListener("DOMContentLoaded", function() {
         source: 'boston_route',
         paint: {
           'line-color': '#32D400',
-          'line-width': 4,
-          'line-opacity': 0.6
-        }
-      });
-  
-      map.addLayer({
-        id: 'bike-lanes-cambridge',
-        type: 'line',
-        source: 'cambridge_route',
-        paint: {
-          'line-color': '#0088FF',
-          'line-width': 4,
-          'line-opacity': 0.6
+          'line-width': 3,
+          'line-opacity': 0.7
         }
       });
   
       console.log('Bike lanes added to map!');
   
-      // ✅ Step 3.1: Load Bluebikes Station Data
+      // ✅ Load Bluebikes Station Data
       d3.json('https://dsc106.com/labs/lab07/data/bluebikes-stations.json')
         .then(jsonData => {
-          console.log('Loaded JSON Data:', jsonData);
+          if (!jsonData.data || !jsonData.data.stations) {
+            console.error('Invalid JSON structure:', jsonData);
+            return;
+          }
   
-          // Extract station info
-          let stations = jsonData.data.stations;
-          console.log('Stations Array:', stations);
+          // ✅ Filter out stations with missing coordinates
+          const stations = jsonData.data.stations.filter(station =>
+            station.Lat && station.Long && !isNaN(station.Lat) && !isNaN(station.Long)
+          );
   
-          // ✅ Step 3.2: Overlay an SVG for Bluebikes Stations
+          console.log('Valid Stations Loaded:', stations.length);
+  
+          // ✅ Create the SVG overlay
           const svg = d3.select('#map')
             .append('svg')
             .attr('id', 'station-overlay')
@@ -66,50 +56,45 @@ document.addEventListener("DOMContentLoaded", function() {
             .style('left', '0')
             .style('width', '100%')
             .style('height', '100%')
-            .style('z-index', '1') // Ensures it appears on top
-            .style('pointer-events', 'none'); // Allows map interaction
+            .style('z-index', '1')
+            .style('pointer-events', 'none');
   
-          // ✅ Step 3.3: Helper Function to Convert Coordinates
+          // ✅ Convert Station Coordinates to Pixel Positions
           function getCoords(station) {
-            const point = new mapboxgl.LngLat(+station.Long, +station.Lat); // Convert to Mapbox format
-            const { x, y } = map.project(point); // Project to pixel coordinates
+            if (!station.Long || !station.Lat) return { cx: -100, cy: -100 }; // Move offscreen if missing
+            const point = new mapboxgl.LngLat(+station.Long, +station.Lat);
+            const { x, y } = map.project(point);
             return { cx: x, cy: y };
           }
   
-          // ✅ Step 3.3: Append Station Markers as Circles
+          // ✅ Add Circles for Each Station
           const circles = svg.selectAll('circle')
             .data(stations)
             .enter()
             .append('circle')
-            .attr('r', 5) // Station marker size
-            .attr('fill', 'red') // Marker color
-            .attr('stroke', 'white') // White border
+            .attr('r', 6) // Circle size
+            .attr('fill', 'steelblue') // Match the example image
+            .attr('stroke', 'white')
             .attr('stroke-width', 1)
-            .attr('opacity', 0.8)
-            .on('mouseover', function(event, d) {
-              d3.select(this).attr('r', 8);
-            })
-            .on('mouseout', function(event, d) {
-              d3.select(this).attr('r', 5);
-            });
+            .attr('opacity', 0.9);
   
-          // ✅ Step 3.3: Function to Update Positions
+          // ✅ Function to Update Marker Positions
           function updatePositions() {
             circles
-              .attr('cx', d => getCoords(d).cx) // Convert longitude to x-pixel coordinate
-              .attr('cy', d => getCoords(d).cy); // Convert latitude to y-pixel coordinate
+              .attr('cx', d => getCoords(d).cx)
+              .attr('cy', d => getCoords(d).cy);
           }
   
-          // ✅ Initial Positioning
+          // ✅ Initial positioning
           updatePositions();
   
-          // ✅ Keep Station Markers Aligned When Map Moves
+          // ✅ Keep stations aligned when moving or zooming
           map.on('move', updatePositions);
           map.on('zoom', updatePositions);
           map.on('resize', updatePositions);
           map.on('moveend', updatePositions);
   
-          console.log('Station markers added!');
+          console.log('Station markers added successfully!');
         })
         .catch(error => {
           console.error('Error loading JSON:', error);
