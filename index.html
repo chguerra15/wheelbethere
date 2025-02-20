@@ -9,17 +9,20 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" /> 
   <link rel="stylesheet" href="global.css">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-
 </head>
 
 <body>
   <h1>WheelBeThere🚴🏼‍♀️</h1>
-  
-  <!-- Map container -->
+
   <div id="map"></div>
 
-  <!-- Mapbox GL JS -->
+  <!-- Load D3.js -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- Load Mapbox GL JS -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <script src="map.js"></script> <!-- Ensure this file initializes the map correctly -->
+
+  <!-- Load Custom Map Script -->
+  <script src="map.js"></script> 
 </body>
 </html>
