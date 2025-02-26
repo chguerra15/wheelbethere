@@ -60,9 +60,18 @@ map.on('load', async () => {
 
     // Helper function to convert latitude/longitude to pixel coordinates
     function getCoords(station) {
-        const point = map.project([+station.Long, +station.Lat]);
+        let lon = parseFloat(station.Long) || parseFloat(station.lon);
+        let lat = parseFloat(station.Lat) || parseFloat(station.lat);
+    
+        if (isNaN(lon) || isNaN(lat)) {
+            console.warn("Invalid coordinates for station:", station);
+            return { cx: 0, cy: 0 }; // Return a default value instead of NaN
+        }
+    
+        const point = map.project([lon, lat]);
         return { cx: point.x, cy: point.y };
     }
+    
 
     // Load trip data and preprocess
     const tripUrl = 'https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv';
@@ -144,6 +153,11 @@ map.on('load', async () => {
             .attr('cx', d => getCoords(d).cx)
             .attr('cy', d => getCoords(d).cy);
     }
+    
+    setTimeout(() => {
+        updatePositions();
+    }, 1000); // Small delay to ensure map is ready
+    
 
     // Initial position update
     updatePositions();
