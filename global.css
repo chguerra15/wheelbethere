@@ -46,18 +46,32 @@ html, body {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-top: 10px;
+    margin-top: 15px;
 }
 
 .legend div {
-    flex: 1;
-    padding: 5px 10px;
-    text-align: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;  /* Makes the labels circular */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
     color: white;
-    border-radius: 5px;
+    text-align: center;
 }
 
-/* Color Assignment for Legend */
-.legend div:nth-child(1) { background: steelblue; }
-.legend div:nth-child(2) { background: gray; }
-.legend div:nth-child(3) { background: darkorange; }
+/* Colors for each label */
+.legend .departures {
+    background-color: steelblue;
+}
+
+.legend .balanced {
+    background-color: gray;
+}
+
+.legend .arrivals {
+    background-color: orange;
+}
+
