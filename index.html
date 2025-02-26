@@ -9,14 +9,29 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" /> 
   <link rel="stylesheet" href="global.css">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+  <style>
+    /* Ensure map container is properly sized */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #map {
+      position: relative;
+      width: 100%;
+      height: 90vh; /* Adjust if needed */
+    }
+  </style>
 </head>
 
 <body>
-  <h1>WheelBeThere🚴🏼‍♀️</h1>
+  <h1>WheelBeThere 🚴🏼‍♀️</h1>
 
-  <div id="map">
-    <svg></svg>
-  </div>
+  <!-- Map Container -->
+  <div id="map"></div>
 
   <!-- Load D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>

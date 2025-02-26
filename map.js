@@ -1,23 +1,23 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 
-// Import Mapbox as an ESM module
-import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/+esm';
-console.log("Mapbox GL JS Loaded:", mapboxgl);
-
-// Set your Mapbox access token here
+// Set your Mapbox access token
 mapboxgl.accessToken = 'pk.eyJ1IjoiY2hndWVycmExNSIsImEiOiJjbTdka3Y4c2swNDg4Mmxwd21sZjk2NDJuIn0.0y_Dn_jn6mgcM65J3VzItg';
 
-// Initialize the map
+// Initialize the Mapbox map
 const map = new mapboxgl.Map({
-    container: 'map', // ID of the div where the map will render
-    style: 'mapbox://styles/mapbox/streets-v12', // Map style
-    center: [-71.09415, 42.36027], // [longitude, latitude]
-    zoom: 12, // Initial zoom level
-    minZoom: 5, // Minimum allowed zoom
-    maxZoom: 18 // Maximum allowed zoom
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v12',
+    center: [-71.09415, 42.36027],  // [longitude, latitude]
+    zoom: 12,
+    minZoom: 5,
+    maxZoom: 18
 });
 
+// Ensure the map is fully loaded before adding data
 map.on('load', async () => {
+    console.log("Map loaded successfully");
+
+    // Add Boston bike lanes
     map.addSource('boston_route', {
         type: 'geojson',
         data: 'https://bostonopendata-boston.opendata.arcgis.com/datasets/boston::existing-bike-network-2022.geojson'
@@ -34,52 +34,63 @@ map.on('load', async () => {
         }
     });
 
+    // Load the Bluebikes station data
+    const jsonUrl = 'https://dsc106.com/labs/lab07/data/bluebikes-stations.json';
     let jsonData;
+
     try {
-        const jsonurl = INPUT_BLUEBIKES_CSV_URL;
-        
-        // Await JSON fetch
-        jsonData = await d3.json(jsonurl);
-        
-        console.log('Loaded JSON Data:', jsonData); // Log to verify structure
+        jsonData = await d3.json(jsonUrl);
+        console.log('Loaded JSON Data:', jsonData);
     } catch (error) {
-        console.error('Error loading JSON:', error); // Handle errors
+        console.error('Error loading JSON:', error);
+        return;  // Stop execution if data fails to load
     }
 
-    // Append circles to the SVG for each station
-    const svg = d3.select('#map').select('svg');
-    const stations = jsonData.data.stations;
+    let stations = jsonData.data.stations;
     console.log('Stations Array:', stations);
 
+    // Ensure the map container is styled properly
+    const container = d3.select('#map');
+    container.style('position', 'relative');
+
+    // Create an SVG overlay to hold the station markers
+    const svg = container.append('svg')
+        .attr('id', 'station-overlay')
+        .style('position', 'absolute')
+        .style('top', '0')
+        .style('left', '0')
+        .style('width', '100%')
+        .style('height', '100%')
+        .style('z-index', '1')
+        .style('pointer-events', 'none');  // Prevent blocking map interactions
+
+    // Helper function to convert latitude/longitude to pixel coordinates
+    function getCoords(station) {
+        const point = map.project([+station.Long, +station.Lat]);
+        return { cx: point.x, cy: point.y };
+    }
+
+    // Append circles to represent each bike station
     const circles = svg.selectAll('circle')
         .data(stations)
         .enter()
         .append('circle')
-        .attr('r', 5)               // Radius of the circle
-        .attr('fill', 'steelblue')  // Circle fill color
-        .attr('stroke', 'white')    // Circle border color
-        .attr('stroke-width', 1)    // Circle border thickness
-        .attr('opacity', 0.8);      // Circle opacity
+        .attr('r', 5)               // Circle radius
+        .attr('fill', 'steelblue')  // Circle color
+        .attr('stroke', 'white')    // Border color
+        .attr('stroke-width', 1)    // Border thickness
+        .attr('opacity', 0.8);      // Opacity
 
-    function getCoords(station) {
-        const point = new mapboxgl.LngLat(+station.lon, +station.lat);  // Convert lon/lat to Mapbox LngLat
-        const { x, y } = map.project(point);  // Project to pixel coordinates
-        return { cx: x, cy: y };  // Return as object for use in SVG attributes
-    }
-
-    // Function to update circle positions when the map moves/zooms
+    // Function to update marker positions dynamically
     function updatePositions() {
         circles
-            .attr('cx', d => getCoords(d).cx)  // Set the x-position using projected coordinates
-            .attr('cy', d => getCoords(d).cy); // Set the y-position using projected coordinates
+            .attr('cx', d => getCoords(d).cx)
+            .attr('cy', d => getCoords(d).cy);
     }
 
-    // Initial position update when map loads
+    // Update marker positions initially
     updatePositions();
 
     // Reposition markers on map interactions
-    map.on('move', updatePositions);     // Update during map movement
-    map.on('zoom', updatePositions);     // Update during zooming
-    map.on('resize', updatePositions);   // Update on window resize
-    map.on('moveend', updatePositions);  // Final adjustment after movement ends
+    map.on('render', updatePositions);
 });
